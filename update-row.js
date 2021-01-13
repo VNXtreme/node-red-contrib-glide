@@ -36,9 +36,9 @@ module.exports = function (RED) {
       }
 
       try {
-        let data = await getList(params);
+        // let data = await getList(params);
 
-        msg.payload = data;
+        // msg.payload = data;
         node.send(msg);
         node.status({ fill: "green", shape: "ring", text: "success.get-list" });
       } catch (error) {
