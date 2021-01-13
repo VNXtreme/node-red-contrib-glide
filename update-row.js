@@ -2,12 +2,12 @@ module.exports = function (RED) {
   "use strict";
   const axios = require('axios');
 
-  function getPocket(n) {
+  function updateRow(n) {
     RED.nodes.createNode(this, n);
 
-    this.pocket = RED.nodes.getNode(n.pocket);
+    this.glide = RED.nodes.getNode(n.glide);
     
-    if (!this.pocket.credentials.accessToken) {
+    if (!this.glide.credentials.accessToken) {
       this.status({ fill: "red", shape: "ring", text: "error.no-access-token" });
       return;
     }
@@ -22,8 +22,8 @@ module.exports = function (RED) {
         state = msg.state || n.state || "unread";
 
       let params = {
-        consumer_key: this.pocket.credentials.consumerKey,
-        access_token: this.pocket.credentials.accessToken,
+        consumer_key: this.glide.credentials.consumerKey,
+        access_token: this.glide.credentials.accessToken,
         sort,
         detailType,
         state
@@ -48,11 +48,5 @@ module.exports = function (RED) {
       }
     });
   }
-  RED.nodes.registerType("get-pocket", getPocket);
-
-  async function getList(params) {
-    let { data } = await axios.get("https://getpocket.com/v3/get", { params: params });
-
-    return data;
-  }
+  RED.nodes.registerType("update-row", updateRow);
 };

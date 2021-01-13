@@ -14,7 +14,7 @@
   limitations under the License.
 -->
 
-<script type="text/x-red" data-template-name="pocket-auth">
+<script type="text/x-red" data-template-name="gg-auth">
     <div id="node-config-pocket-keys">
         <div class="form-row">
             <label for="node-config-input-consumerKey"><i class="fa fa-user"></i> Consumer key</label>
@@ -34,14 +34,23 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('pocket-auth', {
+    RED.nodes.registerType('gg-auth', {
         category: 'config',
         defaults: {
             displayName: { value: "" }
         },
         credentials: {
             displayName: { type: "text" },
-            consumerKey: { type: "password" }
+            client_id: { type: "password" },
+            client_secret: { type: "password" },
+            redirect_uri: { type: "text" },
+            token: {
+                access_token: { type: 'password' },
+                refresh_token: { type: 'password' },
+                scope: { type: 'text' },
+                token_type: { type: 'text' },
+                expiry_date: { type: 'number' },
+            }
         },
         label: function () {
             return this.displayName || this._("pocket");
@@ -49,7 +58,7 @@
         exportable: false,
         oneditprepare: function () {
             let id = this.id;
-            
+            console.log('this', this);
             if (this.has_consumerKey) {
                 $("#pocket-display").show();
                 $("#node-config-input-displayName").val(this.credentials.displayName);

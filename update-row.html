@@ -1,7 +1,7 @@
-<script type="text/x-red" data-template-name="get-pocket">
+<script type="text/x-red" data-template-name="send-data">
     <div class="form-row">
-        <label for="node-input-pocket"><i class="fa fa-user"></i> Pocket</label>
-        <input type="text" id="node-input-pocket">
+        <label for="node-input-gg-auth"><i class="fa fa-user"></i> Auth</label>
+        <input type="text" id="node-input-gg-auth">
     </div>
     <div class="form-row">
         <label for="node-input-search"><i class="fa fa-search"></i> Search</label>
@@ -38,7 +38,7 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="get-pocket">
+<script type="text/x-red" data-help-name="send-data">
     <p>Get pocket list.</p>
     <h3>Inputs</h3>
     <dl class="message-properties">
@@ -78,11 +78,11 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('get-pocket', {
-        category: 'box',
+    RED.nodes.registerType('send-data', {
+        category: 'google',
         color: "#EEE",
         defaults: {
-            pocket: { type: "pocket-auth", required: true },
+            glide: { type: "gg-auth", required: true },
             search: { value: "" },
             tag: { value: false },
             state: { value: 'unread' },
@@ -91,10 +91,10 @@
         },
         inputs: 1,
         outputs: 1,
-        icon: "pocket.png",
+        icon: "glide.png",
         align: "left",
-        label: 'Get Pocket',
-        paletteLabel: 'Get Pocket',
+        label: 'Update row',
+        paletteLabel: 'Update row',
         oneditprepare: function () {
 
         },

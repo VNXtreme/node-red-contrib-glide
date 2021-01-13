@@ -1,13 +1,11 @@
-# node-red-contrib-pocket-api
+# node-red-contrib-glide
 
-The node using Pocket API.
+The node using Google Sheet API & Glide.
 
 
 ## Install
 
-npm install node-red-contrib-pocket-api
+npm install node-red-contrib-glide
 
 
-## Setup Consumer key
-
-Follow <a href="https://getpocket.com/developer/docs/authentication" target="_blank">this guide</a> to retrieve your Consumer key
+## Setup keys
