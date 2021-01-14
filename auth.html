@@ -15,10 +15,16 @@
 -->
 
 <script type="text/x-red" data-template-name="gg-auth">
-    <div id="node-config-pocket-keys">
+    <div id="node-config-keys">
         <div class="form-row">
-            <label for="node-config-input-consumerKey"><i class="fa fa-user"></i> Consumer key</label>
-            <input type="text" id="node-config-input-consumerKey" placeholder="Your consumer key">
+            <label for="node-config-input-client_id"><i class="fa fa-user"></i> Client Id</label>
+            <input type="text" id="node-config-input-client_id" placeholder="Your Client Id">
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-client_secret"><i class="fa fa-user"></i> Client secret</label>
+            <input type="text" id="node-config-input-client_secret" placeholder="Your Client secret">
+        </div>
+        <div class="form-tips" id="node-config-google-tooltip">
         </div>
         <div class="form-row">
             <label>&nbsp;</label>
@@ -43,7 +49,6 @@
             displayName: { type: "text" },
             client_id: { type: "password" },
             client_secret: { type: "password" },
-            redirect_uri: { type: "text" },
             token: {
                 access_token: { type: 'password' },
                 refresh_token: { type: 'password' },
@@ -53,29 +58,32 @@
             }
         },
         label: function () {
-            return this.displayName || this._("glide");
+            return this.displayName || this._("Google auth");
         },
         exportable: false,
         oneditprepare: function () {
             let id = this.id;
             console.log('this', this);
-            if (this.has_consumerKey) {
+            if (this.credentials && this.credentials.token) {
                 $("#pocket-display").show();
                 $("#node-config-input-displayName").val(this.credentials.displayName);
-                $("#node-config-pocket-keys").hide();
+                $("#node-config-keys").hide();
             }
 
             var callback = location.protocol + "//" +
                 location.hostname +
                 (location.port ? ":" + location.port : "") +
-                location.pathname + "pocket/auth_callback?id=" + id;
+                location.pathname + "google/auth_callback?id=" + id;
 
+            $("#node-config-google-tooltip").html("<p>Please configure the authorized <b>Redirect URIs</b> of your app to include the following url:</p>\n<code>" + callback + "</code>")
             $("#node-config-start-auth").mousedown(function () {
-                let consumerKey = $('#node-config-input-consumerKey').val();
+                let clientId = $('#node-config-input-client_id').val(),
+                    clientSecret = $('#node-config-input-client_secret').val();
+
                 var authorizeURL = location.protocol + "//" +
                     location.hostname +
                     (location.port ? ":" + location.port : "") +
-                    location.pathname + "pocket/auth?id=" + id + '&consumerKey=' + consumerKey + "&callback=" + encodeURIComponent(callback);
+                    location.pathname + "google/auth?id=" + id + '&clientId=' + clientId + "&clientSecret=" + clientSecret + "&callback=" + encodeURIComponent(callback);
 
                 $(this).attr("href", authorizeURL);
             });

@@ -1,44 +1,75 @@
 module.exports = function (RED) {
   var axios = require("axios").default;
-  const fs = require('fs');
-  const readline = require('readline');
-  const { google } = require('googleapis');
+  const fs = require("fs");
+  const readline = require("readline");
+  const { google } = require("googleapis");
 
   // If modifying these scopes, delete token.json.
-  const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
-  // The file token.json stores the user's access and refresh tokens, and is
-  // created automatically when the authorization flow completes for the first
-  // time.
-  const TOKEN_PATH = 'token.json';
+  const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 
-  function AuthNode(config) {
+  function GgAuthNode(config) {
     RED.nodes.createNode(this, config);
     var node = this;
 
     node.on("input", function (msg) {
-      if (!node.credentials || !node.credentials.client_id) {
+      if (!node.credentials || !node.credentials.token) {
         node.status({ fill: "red", shape: "dot", text: "error.no-access-token" });
         return;
       }
-      console.log('node', node);
-      return;
+      console.log("node", node);
+
       authorize(JSON.parse(content), updateRows);
     });
   }
 
-  RED.nodes.registerType("gg-auth", AuthNode, {
-    credentials: {
-      client_id: { type: "password", required: true },
-      client_secret: { type: "password" },
-      redirect_uri: { type: "text" },
-      token: {
-        access_token: { type: 'text' },
-        refresh_token: { type: 'text' },
-        scope: { type: 'text' },
-        token_type: { type: 'text' },
-        expiry_date: { type: 'text' },
+  RED.httpAdmin.get("/google/auth", async function (req, res) {
+    let client_id = req.query.clientId,
+      client_secret = req.query.clientSecret,
+      id = req.query.id,
+      redirect_uri = req.query.callback;
+
+    const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uri);
+
+    try {
+      const authUrl = oAuth2Client.generateAuthUrl({
+        access_type: "offline",
+        scope: SCOPES,
+      });
+
+      let credentials = {
+        client_id,
+        client_secret,
+        redirect_uri,
+      };
+      RED.nodes.addCredentials(id, credentials);
+      res.redirect(authUrl);
+    } catch (error) {
+      res.send(RED._("error.authorize", { err: error.response.statusText }));
+    }
+  });
+
+  RED.httpAdmin.get("/google/auth_callback", async function (req, res) {
+    let id = req.query.id,
+      code = req.query.code;
+    let credentials = RED.nodes.getCredentials(id);
+
+    const { client_secret, client_id, redirect_uri } = credentials;
+    const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uri);
+
+    oAuth2Client.getToken(code, (err, token) => {
+      if (err) {
+        console.log("error", err);
+        res.send(RED._("error.get-token"));
+        return;
       }
-    },
+      oAuth2Client.setCredentials(token);
+
+      // Store the token to disk for later program executions
+      credentials = { ...credentials, token };
+      RED.nodes.addCredentials(id, credentials);
+
+      res.send(RED._("message.authorized"));
+    });
   });
 
   // /**
@@ -47,76 +78,66 @@ module.exports = function (RED) {
   //  * @param {Object} credentials The authorization client credentials.
   //  * @param {function} callback The callback to call with the authorized client.
   //  */
-  // function authorize(credentials, callback) {
-  //   const { client_secret, client_id, redirect_uri, token } = credentials;
-  //   const oAuth2Client = new google.auth.OAuth2(
-  //     client_id, client_secret, redirect_uri);
+  function authorize(credentials, callback) {
+    const { client_secret, client_id, redirect_uri, token } = credentials;
+    const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uri);
 
-  //   if (!token) return getNewToken(oAuth2Client, callback)
+    oAuth2Client.setCredentials(JSON.parse(token));
+    callback(oAuth2Client);
+  }
 
-  //   oAuth2Client.setCredentials(JSON.parse(token));
-  //   callback(oAuth2Client);
-  // }
+  async function updateRows(auth) {
+    try {
+      let rows = await readRows(auth); //get rows
 
-  // function getNewTokenURL(oAuth2Client) {
-  //   return oAuth2Client.generateAuthUrl({
-  //     access_type: 'offline',
-  //     scope: SCOPES,
-  //   });
-  // }
+      let sheet = "Expenses";
+      let range = `${sheet}!A${rows.length + 2}:Z`;
+      let values = [
+        [
+          "xtreme1",
+          "https://bstatic.com/xdata/images/xphoto/1182x887/82877075.jpg?k=db9e00135b7b8f038aad88a7676235667ca249a5eed997a499677812fa332833&o=?size=S",
+          "999.1",
+          "Fun",
+          "me",
+          "today",
+        ],
+      ];
+      let body = {
+        values: values,
+      };
 
-  // /**
-  //  * Get and store new token after prompting for user authorization, and then
-  //  * execute the given callback with the authorized OAuth2 client.
-  //  * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
-  //  * @param {getEventsCallback} callback The callback for the authorized client.
-  //  */
-  // function getNewToken(oAuth2Client, callback) {
-  //   const authUrl = getNewTokenURL(oAuth2Client)
-  //   console.log('Authorize this app by visiting this url:', authUrl);
+      const sheets = google.sheets({ version: "v4", auth });
+      sheets.spreadsheets.values
+        .update({
+          spreadsheetId: "1e7qLKRZFQ7kxYq8vo6AAvsDfrlf-zMTUMJKUM2eEdKM",
+          range: range,
+          valueInputOption: "USER_ENTERED",
+          resource: body,
+        })
+        .then((response) => {
+          var result = response.data;
+          console.log(`Cells updated.`, result);
+        })
+        .catch((err) => {
+          console.log("err", err.errors);
+        });
+    } catch (err) {
+      console.log("The API returned an error: " + err);
+    }
+  }
 
-  //   oAuth2Client.getToken(code, (err, token) => {
-  //     if (err) return console.error('Error while trying to retrieve access token', err);
-  //     oAuth2Client.setCredentials(token);
-  //     // Store the token to disk for later program executions
-  //     fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
-  //       if (err) return console.error(err);
-  //       console.log('Token stored to', TOKEN_PATH);
-  //     });
-  //     callback(oAuth2Client);
-  //   });
-
-  // }
-  // RED.httpAdmin.get("/pocket/auth", async function (req, res) {
-  //   try {
-  //     const authUrl = oAuth2Client.generateAuthUrl({
-  //       access_type: 'offline',
-  //       scope: SCOPES,
-  //     });
-  //     console.log('Authorize this app by visiting this url:', authUrl);
-  //     res.redirect(authUrl);
-  //     let credentials = {
-  //       consumerKey,
-  //       requestToken: requestToken.code,
-  //     };
-  //     RED.nodes.addCredentials(id, credentials);
-
-  //     res.redirect(`https://getpocket.com/auth/authorize?request_token=${requestToken.code}&redirect_uri=${callback}`);
-  //   } catch (error) {
-  //     res.send(RED._("error.authorize", { 'err': error.response.statusText }));
-  //   }
-  // });
-
-  // RED.httpAdmin.get("  ", async function (req, res) {
-  //   let credentials = RED.nodes.getCredentials(id);
-
-  //   try {
-
-  //     // RED.nodes.addCredentials(id, credentials);
-
-  //     res.send(RED._("message.authorized"));
-  //   } catch (error) {
-  //     res.send(RED._("error.authorize"));
-  //   }
-  // });
+  RED.nodes.registerType("gg-auth", GgAuthNode, {
+    credentials: {
+      client_id: { type: "password", required: true },
+      client_secret: { type: "password", required: true },
+      redirect_uri: { type: "text" },
+      token: {
+        access_token: { type: "text" },
+        refresh_token: { type: "text" },
+        scope: { type: "text" },
+        token_type: { type: "text" },
+        expiry_date: { type: "number" },
+      },
+    },
+  });
 };
