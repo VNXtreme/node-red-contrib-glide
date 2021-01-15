@@ -1,7 +1,4 @@
 module.exports = function (RED) {
-  var axios = require("axios").default;
-  const fs = require("fs");
-  const readline = require("readline");
   const { google } = require("googleapis");
 
   // If modifying these scopes, delete token.json.
@@ -17,8 +14,6 @@ module.exports = function (RED) {
         return;
       }
       console.log("node", node);
-
-      authorize(JSON.parse(content), updateRows);
     });
   }
 
@@ -84,46 +79,6 @@ module.exports = function (RED) {
 
     oAuth2Client.setCredentials(JSON.parse(token));
     callback(oAuth2Client);
-  }
-
-  async function updateRows(auth) {
-    try {
-      let rows = await readRows(auth); //get rows
-
-      let sheet = "Expenses";
-      let range = `${sheet}!A${rows.length + 2}:Z`;
-      let values = [
-        [
-          "xtreme1",
-          "https://bstatic.com/xdata/images/xphoto/1182x887/82877075.jpg?k=db9e00135b7b8f038aad88a7676235667ca249a5eed997a499677812fa332833&o=?size=S",
-          "999.1",
-          "Fun",
-          "me",
-          "today",
-        ],
-      ];
-      let body = {
-        values: values,
-      };
-
-      const sheets = google.sheets({ version: "v4", auth });
-      sheets.spreadsheets.values
-        .update({
-          spreadsheetId: "1e7qLKRZFQ7kxYq8vo6AAvsDfrlf-zMTUMJKUM2eEdKM",
-          range: range,
-          valueInputOption: "USER_ENTERED",
-          resource: body,
-        })
-        .then((response) => {
-          var result = response.data;
-          console.log(`Cells updated.`, result);
-        })
-        .catch((err) => {
-          console.log("err", err.errors);
-        });
-    } catch (err) {
-      console.log("The API returned an error: " + err);
-    }
   }
 
   RED.nodes.registerType("gg-auth", GgAuthNode, {

@@ -63,7 +63,7 @@
         exportable: false,
         oneditprepare: function () {
             let id = this.id;
-            console.log('this', this);
+            
             if (this.credentials && this.credentials.token) {
                 $("#pocket-display").show();
                 $("#node-config-input-displayName").val(this.credentials.displayName);

@@ -1,11 +1,15 @@
 <script type="text/x-red" data-template-name="update-row">
     <div class="form-row">
-        <label for="node-input-glide"><i class="fa fa-user"></i> Auth</label>
+        <label for="node-input-glide">Auth</label>
         <input type="text" id="node-input-glide">
     </div>
     <div class="form-row">
-        <label for="node-input-search"><i class="fa fa-search"></i> Search</label>
-        <input type="text" id="node-input-search">
+        <label for="node-input-sheetId">Sheet Id</label>
+        <input type="text" id="node-input-sheetId">
+    </div>
+    <div class="form-row">
+        <label for="node-input-sheetName">Sheet name</label>
+        <input type="text" id="node-input-sheetName">
     </div>
 </script>
 
@@ -13,10 +17,10 @@
     <p>Get pocket list.</p>
     <h3>Inputs</h3>
     <dl class="message-properties">
-        <dt>search
+        <dt>sheet
             <span class="property-type">string</span>
         </dt>
-        <dd>Search keys</dd>
+        <dd>sheet name</dd>
     </dl>
 
     <h3>Outputs</h3>
@@ -34,11 +38,8 @@
         color: "#EEE",
         defaults: {
             glide: { type: "gg-auth", required: true },
-            search: { value: "" },
-            tag: { value: false },
-            state: { value: 'unread' },
-            sort: { value: "newest" },
-            detailType: { value: "simple" },
+            sheetId: { value: "" },
+            sheetName: { value: "" },
         },
         inputs: 1,
         outputs: 1,

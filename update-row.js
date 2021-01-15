@@ -1,13 +1,13 @@
 module.exports = function (RED) {
   "use strict";
-  const axios = require('axios');
+  const { google } = require("googleapis");
 
   function updateRow(n) {
     RED.nodes.createNode(this, n);
 
     this.glide = RED.nodes.getNode(n.glide);
-    
-    if (!this.glide.credentials.accessToken) {
+
+    if (!this.glide.credentials.token) {
       this.status({ fill: "red", shape: "ring", text: "error.no-access-token" });
       return;
     }
@@ -15,38 +15,63 @@ module.exports = function (RED) {
     let node = this;
 
     node.on("input", async function (msg) {
-      let searchKey = msg.search || n.search,
-        useTag = msg.tag || n.tag,
-        sort = msg.sort || n.sort,
-        detailType = msg.detailType || n.detailType,
-        state = msg.state || n.state || "unread";
+      let sheetId = msg.sheetId || n.sheetId,
+        sheetName = msg.sheetName || n.sheetName,
+        sheetData = msg.sheetData || n.sheetData;
+      let credentials = node.glide.credentials;
 
-      let params = {
-        consumer_key: this.glide.credentials.consumerKey,
-        access_token: this.glide.credentials.accessToken,
-        sort,
-        detailType,
-        state
+      // Check if we have previously stored a token.
+      if (!credentials.token) {
+        this.status({ fill: "red", shape: "ring", text: "error.no-access-token" });
+        return;
       }
 
-      if (useTag) {
-        params = { ...params, tag: searchKey }
-      } else {
-        params = { ...params, search: searchKey }
-      }
+      const { client_secret, client_id, redirect_uri } = credentials;
+      const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uri);
+      oAuth2Client.setCredentials(credentials.token);
 
       try {
-        // let data = await getList(params);
+        let payload = await update(oAuth2Client, sheetName, sheetId, sheetData);
 
-        // msg.payload = data;
+        msg.payload = payload;
         node.send(msg);
-        node.status({ fill: "green", shape: "ring", text: "success.get-list" });
+        node.status({ fill: "green", shape: "ring", text: "success.update" });
       } catch (error) {
         node.error('Error:', error.response.data)
-        node.status({ fill: "red", shape: "dot", text: "error.get-list" });
+        node.status({ fill: "red", shape: "dot", text: "error.update" });
         return;
       }
     });
+  }
+
+  async function update(auth, sheetName, spreadsheetId, sheetData) {
+    try {
+      let rows = await read(auth, sheetName, spreadsheetId); //get rows
+      let range = `${sheetName}!A${rows.length + 2}:Z`;
+      let body = { values: sheetData };
+
+      const sheets = google.sheets({ version: "v4", auth });
+      let { data } = await sheets.spreadsheets.values.update({
+        spreadsheetId: spreadsheetId,
+        range: range,
+        valueInputOption: "USER_ENTERED",
+        resource: body,
+      });
+
+      return data;
+    } catch (err) {
+      console.log("The API returned an error: " + err);
+    }
+  }
+
+  async function read(auth, sheetName, spreadsheetId) {
+    const sheets = google.sheets({ version: 'v4', auth });
+    let { data } = await sheets.spreadsheets.values.get({
+      spreadsheetId: spreadsheetId,
+      range: `${sheetName}!A2:X`,
+    });
+
+    return data.values;
   }
   RED.nodes.registerType("update-row", updateRow);
 };
