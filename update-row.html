@@ -17,10 +17,20 @@
     <p>Get pocket list.</p>
     <h3>Inputs</h3>
     <dl class="message-properties">
-        <dt>sheet
+        <dt>sheetId
             <span class="property-type">string</span>
         </dt>
-        <dd>sheet name</dd>
+        <dd>Google Sheet Id</dd>
+
+        <dt>sheetName
+            <span class="property-type">string</span>
+        </dt>
+        <dd>Tab name of current sheet</dd>
+
+        <dt>sheetData
+            <span class="property-type">array</span>
+        </dt>
+        <dd>Data you want to save to google sheet. By default, all data will be inserted at the bottom. Example format: <code>[["A2","B2","C2"],["A3","B3","C3"]]<code/></dd>
     </dl>
 
     <h3>Outputs</h3>
